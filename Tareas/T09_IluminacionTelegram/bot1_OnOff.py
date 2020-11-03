@@ -1,31 +1,37 @@
 #!/usr/bin/python
+# Fecha:            27/octubre/2020
+# Descripción:      Programa que permite encender y apagar diferentes luces
+#                   utilizando un bot de Telegram
 
-import telebot
+import telebot, re
 from gpiozero import LED, LEDBoard
 
 ledB = LEDBoard(26, 19, 13, 6)
 lugares = (0, 1, 2, 3)
 
-API_TOKEN = '1391144634:AAHEamkwuK8dOQ-oYpEPn59fiBXzGGkq-uA'
+API_TOKEN = '1258492295:AAH7DDW2U-FyzQmEqKN30METEspTYSjwaSQ'
 
 bot = telebot.TeleBot(API_TOKEN)
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['start', 'help'])
-def encender(message):
+def info(message):
         bot.reply_to(message, """\
 Bienvenido al sistema de iluminación inteligente, \
 aquí podrás apagar de manera remota las distintas luces \
-de tu terraza \U0001F4A1\U0001F9E0 Envia el comando /help \
-para recibir ayuda.""" """Actualmente tus luces y su estado son:
+de tu terraza \U0001F4A1\U0001F9E0.\n""" +
+"""Envia el comando /help para recibir ayuda.\n""" +
+"""Actualmente tus luces y su estado son:
 """ + estados() + """
 Enviame la acción (on, off) seguido del numero de luz.\n
 Ejemplo: on 1""")
 
 # Handle '/on'
-@bot.message_handler(regexp="(on){1}? [0-9]")
+@bot.message_handler(regexp="(on){1}? ([0-9])")
 def encender(message):
-    l = message.text.replace("on ", "")
+    reg = re.compile("(on){1}? ([0-9])", re.I)
+    m = reg.match(message.text)
+    l = m.group(2) # Obtiene el número de la cadena recibida
     l = int(l) - 1
     leds = ledB.value
     if(l not in lugares):
@@ -45,8 +51,10 @@ def encender(message):
 
 # Handle '/off'
 @bot.message_handler(regexp="(off){1}? [0-9]")
-def encender(message):
-    l = message.text.replace("off ", "")
+def apagar(message):
+    reg = re.compile("(off){1}? ([0-9])", re.I)
+    m = reg.match(message.text)
+    l = m.group(2) # Obtiene el número de la cadena recibida
     l = int(l) - 1
     leds = ledB.value
     if(l not in lugares):
@@ -61,6 +69,16 @@ def encender(message):
         bot.reply_to(message, """\
             Se murió \U0001F61E\
             """)
+
+# Handle all other messages with content_type 'text' (content_types defaults to
+# ['text'])
+@bot.message_handler(func=lambda message: True)
+def echo_message(message):
+    bot.reply_to(message, """\
+    Comando <""" + message.text + "> no encontrado\n" +
+    "Envia el comando /help para obter ayuda sobre el funcionamiento del bot " +
+    "\U0001F916"
+    )
 
 def estados():
     est = ""
