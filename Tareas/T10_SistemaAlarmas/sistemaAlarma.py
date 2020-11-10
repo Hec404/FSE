@@ -3,12 +3,14 @@
 # Descripción:      Programa que activa una alarma usando un sensor
 #                   ultrasónico y notifica a través de un bot de Telegram
 
-import telebot
-from gpiozero import DistanceSensor, LED
+import telebot, pygame
+from gpiozero import DistanceSensor
 
-sensor = DistanceSensor(echo=18, trigger=17, max_distance=0.4)
-#buzzer = Buzzer(15)
-led = LED(15)
+sensor = DistanceSensor(echo=18, trigger=17, max_distance=1)
+
+#inicia la instancia para reproducir sonidos
+pygame.mixer.init()
+pygame.mixer.music.load("bedobedo.mp3")
 #Bandera que indica si el sistema está encendido o apagado
 alarmFlag = False
 #Bandera para ignorar al sensor cuando esté apagado el sistema
@@ -69,7 +71,7 @@ def apagar(message):
         #Ignora el uso del sensor
         sensorFlag = False
         #Apaga la alarma
-        led.off()
+        pygame.mixer.music.stop()
         #buzzer.off()
         bot.reply_to(message, """\
             PRECAUCIÓN: Se ha desactivado el sistema de alarma\
@@ -88,9 +90,9 @@ def apagarAlarma(message):
     #elif(buzzer.is_active):
         #buzzer.off()
     #Si se activó la alarma
-    elif(led.is_lit):
+    elif(pygame.mixer.music.get_busy()):
         #Apaga la alarma
-        led.off()
+        pygame.mixer.music.stop()
         bot.reply_to(message, 
             "Alarma apagada\n" +
             "Verifique quién ha utilizado la puerta\n")
@@ -109,7 +111,7 @@ def setAlarm(message):
     #esté apagado el sistema
     if(sensorFlag):
         #Enciende la alarma
-        led.on()
+        pygame.mixer.music.play()
         #buzzer.on()
         bot.send_message(message.chat.id,"Advertencia: Alguien abrió la puerta")
     return
