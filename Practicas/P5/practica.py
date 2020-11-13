@@ -1,13 +1,29 @@
+# Fecha:         12/noviembre/2020
+# Descripción:   Programa que utiliza un bot de telgram para seleccionar
+#                diferentes modos de interactuar con los elementos de la
+#                terraza inteligente.
+#
+#   Comando             Descripción del comando
+#   /start, /help       Envia un mensaje al usuario sobre el uso del bot.
+#
+#   /toldo1             Permite cerrar el toldo de la terraza cuando se
+#                       detecta la luz del sol, mientras que al caer la noche,
+#                       se vuelve a abrir. Esto de forma automática.
+#
+#   /toldo2             Permite abrir y cerrar el toldo de forma manual usando
+#                       un botón bluedot. Posee validación en caso de abir o
+#                       cerrar el toldo en su extremo máximo.
+#
+#   /mov                Permite encender una lámpara de forma automática.
+#                       El encendido se realiza si es de noche y se detecta una
+#                       persona en la terraza.
+
 import telebot
-from gpiozero import DistanceSensor
-from gpiozero import Motor
-from gpiozero import LightSensor, LED
-from gpiozero import DistanceSensor, LED
+from gpiozero import DistanceSensor, Motor, LightSensor, LED, DistanceSensor
 from time import sleep
 from signal import pause
 from bluedot import BlueDot
 
-#
 sensorLuz = LightSensor(16)
 led = LED(12)
 sensorUltra = DistanceSensor(14, 15, max_distance=1,threshold_distance=0.2)
@@ -68,7 +84,9 @@ def light():
     #Indicamos que el toldo está abierto
     banderaT=0 
     motor.stop()
-    
+
+
+
 # Handle '/toldo2'
 @bot.message_handler(commands=['toldo2'])
 def toldo2(message):
@@ -78,8 +96,7 @@ def toldo2(message):
     cont_back=0
     cont_for=100
     bd.when_moved = set_pos
-    bd.when_released = nada
-    
+    bd.when_released = motor.stop()
    
 def set_pos(pos):
     global pos_ant,cont_for,cont_back
@@ -108,11 +125,9 @@ def set_pos(pos):
             cont_back-=1
     #Guardamos posición anterior
     pos_ant=pos_act
-    
-    
-def nada():
-    motor.stop()
-#Si no hay luz prende el led si detecta la presencia de alguien
+
+
+
 # Handle '/mov'
 @bot.message_handler(commands=['mov'])
 def detectMov(message):
@@ -131,12 +146,6 @@ def es_dia():
     sensorUltra.when_out_of_range = led.off
     bd.when_moved = None
 
-def mensajes(message,x):
-    bot.reply_to(message, 
-            "El camino es oscuro\n" +
-            "Alumbremos a los paseantes\n")
-    
-    
 bd = BlueDot()
     
 bot.polling()    
