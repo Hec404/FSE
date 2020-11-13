@@ -13,9 +13,11 @@ led = LED(12)
 sensorUltra = DistanceSensor(14, 15, max_distance=1,threshold_distance=0.2)
 motor = Motor(forward=21,backward=20)
 
-#Bandera para toldo, considera que está cerrada inicialmente
+#Variables globales 
 banderaT=1
 pos_ant=0
+cont_for=0
+cont_back=0
 
 # Cambia el Token con el correspondiente de tu bot
 API_TOKEN = '1364090815:AAHENBX3_jYXxLp6Fmlb5hmBDrzQU92cxug'
@@ -28,8 +30,6 @@ def info(message):
         bot.reply_to(message,
             "Bienvenido a la Terraza inteligente.\n"+
             "Comandos:\n"
-            "</on>: Activa el sistema \n"+
-            "</off>: Desactiva el sistema\n"+
             "</toldo1>: Automático\n"+
             "</toldo2>: Manual \n"+
             "</mov>: Detecta movimiento y prende luz \n"
@@ -41,29 +41,15 @@ def info(message):
 @bot.message_handler(commands=['toldo1'])
 def toldo(message):
     global banderaT
-    #Si no se detecta luz se abre el toldo
-    print(banderaT)
-    print(sensorLuz.value)
-    #Si el toldo está cerrado
-#    if (banderaT==0):
-#        bot.reply_to(message, 
-#            "Está atardeciendo\n" +
-#            "Dejemos entrar la luz \n")
-#        sensorLuz.when_dark = dark
-#        bd.when_moved = None
-        #sensorLuz.when_light = nada
-    #Si el toldo está abierto
- #   else:
- #       bot.reply_to(message, 
-  #          "Hay mucho Sol\n" +
- #           "Cuidemos tu piel\n")
-        #Si se detecta luz se cierra el toldo
- #       sensorLuz.when_light = light
-  #      bd.when_moved = None
+
+    #Si se detecta luz se cierra el toldo
+    sensorLuz.when_light = light
+    
     #Si no hay luz
     sensorLuz.when_dark=dark
-        
-    sensorLuz.when_light=light
+    
+    bd.when_moved = None
+
         
 def dark():
     global banderaT
@@ -86,17 +72,41 @@ def light():
 # Handle '/toldo2'
 @bot.message_handler(commands=['toldo2'])
 def toldo2(message):
+    ##Le damos una posicion inicial al toldo
+    global cont_back
+    global cont_for
+    cont_back=0
+    cont_for=100
     bd.when_moved = set_pos
     bd.when_released = nada
     
    
 def set_pos(pos):
-    global pos_ant
+    global pos_ant,cont_for,cont_back
     pos_act = pos.x
+    print("back ",cont_back)
+    print("for ",cont_for)
+    #Si la posición actual es mayor a la anterior el abrimos
     if (pos_act>pos_ant):
-        motor.backward()
+        #Si avanza más de lo debido
+        if(cont_back>100):
+            print("Alto! Lo vas a romper")
+            motor.stop()
+        else:
+            motor.backward()
+            cont_for-=1
+            cont_back+=1
+     #Si la posición actual es menor a la anterior el cerramos
     elif(pos_act<pos_ant):
-        motor.forward()
+        #Si avanza más de lo debido
+        if(cont_for>100):
+            print("Alto! Lo vas a romper")
+            motor.stop()
+        else:
+            motor.forward()
+            cont_for+=1
+            cont_back-=1
+    #Guardamos posición anterior
     pos_ant=pos_act
     
     
@@ -106,7 +116,9 @@ def nada():
 # Handle '/mov'
 @bot.message_handler(commands=['mov'])
 def detectMov(message):
+    #Sólo reacciona cuando no hay luz
     sensorLuz.when_dark = sensorMov
+    #Cuando hay luz no prende el led
     sensorLuz.when_light = es_dia
     bd.when_moved = None
 def sensorMov():
