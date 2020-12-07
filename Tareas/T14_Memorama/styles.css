@@ -10,7 +10,7 @@ body {
 }
 
 .memory-game {
-  width: 640px;
+  width: 1200px;
   height: 640px;
   margin: auto;
   display: flex;
@@ -19,7 +19,7 @@ body {
 }
 
 .memory-card {
-  width: calc(25% - 10px);
+  width: calc(16.66% - 10px);
   height: calc(33.33% - 10px);
   position: relative;
   margin: 5px;
