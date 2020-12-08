@@ -58,13 +58,13 @@ function resetBoard(){
 
 // Función para asignar un número aleatorio a la propiedad "order" de todas
 // las cartas, lo cual permite ordenar de forma aleatoria las cartas
-(function shuffle(){
+/*(function shuffle(){
   cards.forEach(card => {
     let randomPos = Math.floor(Math.random() * 12);
     card.style.order = randomPos;
   });
 })();
-
+*/
 //Para cada carta, se agrega un listener que se invoca cada que se da clic en la
 //carta
 cards.forEach(card => card.addEventListener('click',flipCard));
