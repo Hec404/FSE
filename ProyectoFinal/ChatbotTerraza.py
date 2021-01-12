@@ -24,17 +24,27 @@ bot = telebot.TeleBot(API_TOKEN)
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['start', 'help'])
 def info(message):
-        bot.reply_to(message,
-            "Bienvenido al sistema de iluminación inteligente, aquí podrás "+
-            "encender y apagar de manera remota las distintas luces "+
-            "de tu terraza \U0001F4A1\U0001F9E0, además de poder atenuar su "+
-            "intensidad.\nEnvia el comando /help para recibir ayuda.\n"+
-            lamparas.getEstados() +
-            "Enviame la acción (on, off) seguido del numero de luz.\n"+
-            "Ejemplo: on 1\n"+
-            "Cuando la luz esté encendida, puedes enviar el mensaje 'atenuar n"+
-            "' para atenuar la luz n-ésima."
-        )
+    bot.reply_to(message,
+        "Bienvenido al sistema de iluminación inteligente, aquí podrás "+
+        "encender y apagar de manera remota las distintas luces "+
+        "de tu terraza \U0001F4A1\U0001F9E0, además de poder atenuar su "+
+        "intensidad.\nEnvia el comando /help para recibir ayuda.\n"+
+        "Enviame la acción seguido del numero de luz.\n"+
+        "Ejemplo: on 1\n"+
+        "Lista de comandos reconocidos: \n" +
+        "1) on: enciende la luz indicada\n" +
+        "2) off: apaga la luz indicada\n" +
+        "3) atenuar: usando BlueDot permite modificar la intensidad de una luz encendida\n" +
+        "4) /estado: muestra información del estado de tus luces"
+    )
+    return
+
+#handle '/estado'
+@bot.message_handler(commands=['estado'])
+def estadoLuces(message):
+	global lamparas
+	bot.reply_to(message, lamparas.getEstados())
+	return
 
 #Handle '/on'
 @bot.message_handler(regexp = "(on){1}? [0-9]")
@@ -92,17 +102,27 @@ def botAtenuarLuz(message):
 		bot.reply_to(message, """\
 			Creo que no existe esa luz \U0001F605 """)
 		return
-	#Asocia funcion a BlueDot
-	bd[0,1].when_moved = lamparas.ajustarAtenuacion
 	#Llama al metodo para atenuar una luz
 	if(lamparas.atenuarLuz(l)):
+		#Asocia funcion a BlueDot
+		bd[0,1].when_moved = lamparas.ajustarAtenuacion
 		bot.reply_to(message, """\
 			Atenuación \U0001F61C """)
+		return
 	else:
 		#No se atenuó ninguna luz
 		bot.reply_to(message, """\
 			No puedo atenuar hasta que la enciendas \U0001F622 """)
+		return
 
+#Maneja aquellos mensajes cuyo content_type sea 'text'
+@bot.message_handler(func=lambda message: True)
+def echo_message(message):
+	bot.reply_to(message,
+		"Comando <" + message.text + "> no encontrado\n" +
+		"Envía el comando /help para obtener ayuda sobre el funcionamiento del " +
+		"bot \U0001F916")
+	return
 
 #Funcion para obtener numeros de los comandos a traves de una expresion regular
 def obtenerNumero(expReg, mensaje):

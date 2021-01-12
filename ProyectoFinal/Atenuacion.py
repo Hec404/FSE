@@ -16,6 +16,7 @@ class Atenuacion():
 		self.lugares = (0, 1, 2, 3)
 		self.leds = []
 		self.brillo = 0
+		self.ledAtenuado = -1
 
 	#Metodo para obtener lista de valores de leds
 	def getValores(self):
@@ -77,19 +78,27 @@ class Atenuacion():
 		self.getValores()
 		#Comprueba si el led esta apagado
 		if(self.leds[l] == 0):
+			self.ledAtenuado = -1
 			return False
 		else:
-			#Ajusta el valor de la atenuacion del led seleccionado
-			if(l == 0):
-				self.ledB.value = (self.brillo, self.leds[1], self.leds[2], self.leds[3])
-			if(l == 1):
-				self.ledB.value = (self.leds[0], self.brillo, self.leds[2], self.leds[3])
-			if(l == 2):
-				self.ledB.value = (self.leds[0], self.leds[1], self.brillo, self.leds[3])
-			if(l == 3):
-				self.ledB.value = (self.leds[0], self.leds[1], self.leds[2], self.brillo)
+			#Asigna el led que se debe atenuar
+			self.ledAtenuado = l
 			return True
 
 	def ajustarAtenuacion(self, pos):
 		self.brillo = (pos.y + 1) / 2
+		#Ajusta el valor de la atenuacion del led seleccionado
+		for i in range (len(self.lugares)):
+			if(self.ledAtenuado == i):
+				self.ledB[i].value = self.brillo
+			else:
+				self.ledB[i].value = self.leds[i]
+		# if(l == 0):
+		# 	self.ledB.value = (self.brillo, self.leds[1], self.leds[2], self.leds[3])
+		# if(l == 1):
+		# 	self.ledB.value = (self.leds[0], self.brillo, self.leds[2], self.leds[3])
+		# if(l == 2):
+		# 	self.ledB.value = (self.leds[0], self.leds[1], self.brillo, self.leds[3])
+		# if(l == 3):
+		# 	self.ledB.value = (self.leds[0], self.leds[1], self.leds[2], self.brillo)
 		#return self.brillo
