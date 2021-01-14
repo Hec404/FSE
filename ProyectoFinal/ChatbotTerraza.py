@@ -1,8 +1,8 @@
 #!/usr/bin/python
-# Fecha:            1/noviembre/2020
+# Fecha:            13/enero/2021
 # Descripción:      Programa principal de control de la terraza inteligente,
-#					realiza el manejo de distintos comandos mediante un
-#					chatbot de Telegram
+#										realiza el manejo de distintos comandos mediante un
+#										chatbot de Telegram
 
 import telebot, re
 from gpiozero import LED, LEDBoard
@@ -54,7 +54,7 @@ def info(message):
 	)
 	return
 
-###################################### Handlers de encendido y atenuado de focos
+###################################### Handlers de encendido y atenuado de luces
 #handle '/estado'
 @bot.message_handler(commands=['estado'])
 def estadoLuces(message):
@@ -131,19 +131,37 @@ def botAtenuarLuz(message):
 			No puedo atenuar hasta que la enciendas \U0001F622 """)
 		return
 
-###################################### Handlers RGB
+################################################################### Handlers RGB
 @bot.message_handler(commands=['encenderRGB'])
 def encenderRGB(message):
-	# Activa el RGB
-	rgbObject.control_rgb(True)
-	bot.reply_to(message, "RGB activado 🎆")
+	if not rgbObject.get_estado(): # Si el RGB no está encendido
+		# Activa el RGB
+		rgbObject.control_rgb(True)
+		bot.reply_to(message, "RGB activado 🎆")
+	else:
+		bot.reply_to(message, "El RGB ya estaba encendido 🤷")
+	return
+
+@bot.message_handler(commands=['estableceRGB'])
+def estableceRGB(message):
+	if rgbObject.get_estado(): # Si el RGB está encendido
+		# Desactiva el control del RGB
+		rgbObject.control_rgb(False)
+		bot.reply_to(message, "Control del RGB desactivado 👍")
+	else:
+		bot.reply_to(message, 
+			"Debes encender el RGB antes de establecer su color 🤷"
+		)
 	return
 
 @bot.message_handler(commands=['apagarRGB'])
 def apagarRGB(message):
-	# Desactiva el RGB
-	rgbObject.control_rgb(False)
-	bot.reply_to(message, "RGB desactivado 🙈")
+	if rgbObject.get_estado(): # Si el RGB está encendido
+		# Apaga el RGB
+		rgbObject.apaga_rgb()
+		bot.reply_to(message, "RGB apagado 🙈")
+	else:
+		bot.reply_to(message, "El RGB ya estaba apagado 🤷")
 	return
 
 #Maneja aquellos mensajes cuyo content_type sea 'text'
