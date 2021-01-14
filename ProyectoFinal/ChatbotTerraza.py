@@ -11,34 +11,50 @@ from random import choice
 from gpiozero import PWMLED
 
 from Atenuacion import *
+from Reflectores import LedRGB
 
-#Inializacion de objetos
+# Inializacion de objetos
 ledB = LEDBoard(26, 19, 13, 6, pwm=True)
 lamparas = Atenuacion(ledB)
 
+# Creacion de objeto BlueDot con 3 botones
+bd = BlueDot(cols=2, rows=3)
+
+# Ocultar botones no usados
+bd[0,0].visible = False
+bd[0,2].visible = False
+bd[1,1].visible = False
+# Cambio de colores de los botones
+for button in bd.buttons:
+	button.color = choice(list(COLORS.values()))
+
+# Creación de objeto RGB
+rgbObject = LedRGB(bd[1,0])
+
 ###Token del bot usado
-API_TOKEN = '1391144634:AAHEamkwuK8dOQ-oYpEPn59fiBXzGGkq-uA'
+API_TOKEN = '1258492295:AAH7DDW2U-FyzQmEqKN30METEspTYSjwaSQ'
 
 bot = telebot.TeleBot(API_TOKEN)
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['start', 'help'])
 def info(message):
-    bot.reply_to(message,
-        "Bienvenido al sistema de iluminación inteligente, aquí podrás "+
-        "encender y apagar de manera remota las distintas luces "+
-        "de tu terraza \U0001F4A1\U0001F9E0, además de poder atenuar su "+
-        "intensidad.\nEnvia el comando /help para recibir ayuda.\n"+
-        "Enviame la acción seguido del numero de luz.\n"+
-        "Ejemplo: on 1\n"+
-        "Lista de comandos reconocidos: \n" +
-        "1) on: enciende la luz indicada\n" +
-        "2) off: apaga la luz indicada\n" +
-        "3) atenuar: usando BlueDot permite modificar la intensidad de una luz encendida\n" +
-        "4) /estado: muestra información del estado de tus luces"
-    )
-    return
+	bot.reply_to(message,
+		"Bienvenido al sistema de iluminación inteligente, aquí podrás "+
+		"encender y apagar de manera remota las distintas luces "+
+		"de tu terraza \U0001F4A1\U0001F9E0, además de poder atenuar su "+
+		"intensidad.\nEnvia el comando /help para recibir ayuda.\n"+
+		"Enviame la acción seguido del numero de luz.\n"+
+		"Ejemplo: on 1\n"+
+		"Lista de comandos reconocidos: \n" +
+		"1) on: enciende la luz indicada\n" +
+		"2) off: apaga la luz indicada\n" +
+		"3) atenuar: usando BlueDot permite modificar la intensidad de una luz encendida\n" +
+		"4) /estado: muestra información del estado de tus luces"
+	)
+	return
 
+###################################### Handlers de encendido y atenuado de focos
 #handle '/estado'
 @bot.message_handler(commands=['estado'])
 def estadoLuces(message):
@@ -115,6 +131,21 @@ def botAtenuarLuz(message):
 			No puedo atenuar hasta que la enciendas \U0001F622 """)
 		return
 
+###################################### Handlers RGB
+@bot.message_handler(commands=['encenderRGB'])
+def encenderRGB(message):
+	# Activa el RGB
+	rgbObject.control_rgb(True)
+	bot.reply_to(message, "RGB activado 🎆")
+	return
+
+@bot.message_handler(commands=['apagarRGB'])
+def apagarRGB(message):
+	# Desactiva el RGB
+	rgbObject.control_rgb(False)
+	bot.reply_to(message, "RGB desactivado 🙈")
+	return
+
 #Maneja aquellos mensajes cuyo content_type sea 'text'
 @bot.message_handler(func=lambda message: True)
 def echo_message(message):
@@ -131,15 +162,5 @@ def obtenerNumero(expReg, mensaje):
 	m = reg.match(mensaje.text)
 	#Retorna el numero de la cadena recibida
 	return m.group(2)
-
-#Creacion de objeto BlueDot con 3 botones
-bd = BlueDot(cols=2, rows=3)
-#Ocultar botones no usados
-bd[0,0].visible = False
-bd[0,2].visible = False
-bd[1,1].visible = False
-#Cambio de colores de los botones
-for button in bd.buttons:
-	button.color = choice(list(COLORS.values()))
 
 bot.polling()
