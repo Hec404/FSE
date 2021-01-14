@@ -11,7 +11,7 @@ from random import choice
 from gpiozero import PWMLED
 
 from Atenuacion import *
-from Reflectores import LedRGB
+from Reflectores import LedRGB, TiraLeds
 
 # Inializacion de objetos
 ledB = LEDBoard(26, 19, 13, 6, pwm=True)
@@ -31,6 +31,9 @@ for button in bd.buttons:
 # Creación de objeto RGB
 rgbObject = LedRGB(bd[1,0])
 
+# Creación de una tira de leds
+tiraLeds = TiraLeds(bd[1,2])
+
 ###Token del bot usado
 API_TOKEN = '1258492295:AAH7DDW2U-FyzQmEqKN30METEspTYSjwaSQ'
 
@@ -49,8 +52,19 @@ def info(message):
 		"Lista de comandos reconocidos: \n" +
 		"1) on: enciende la luz indicada\n" +
 		"2) off: apaga la luz indicada\n" +
-		"3) atenuar: usando BlueDot permite modificar la intensidad de una luz encendida\n" +
-		"4) /estado: muestra información del estado de tus luces"
+		"3) atenuar: usando BlueDot permite modificar la intensidad de una luz "+
+		"encendida\n"+
+		"4) /estado: muestra información del estado de tus luces\n\n"+
+		"Uso del RGB:\n"+
+		"1) /encenderRGB: Enciende el RGB y permite modificar su color mediante "+
+		"el bluedot\n"+
+		"2) /estableceRGB: Establece el valor del RGB para que no pueda ser "+
+		"modificado por el bluedot\n"+
+		"3) /apagarRGB: Apaga el RGB\n\n"
+		"Uso de la tira de LEDs:\n"+
+		"1) /encenderTiraLEDs: Enciende la tira de LEDs y permite manipularla "+
+		"mediante el bluedot\n"+
+		"2) /apagarTiraLEDs: Apaga la tira de LEDs"
 	)
 	return
 
@@ -162,6 +176,27 @@ def apagarRGB(message):
 		bot.reply_to(message, "RGB apagado 🙈")
 	else:
 		bot.reply_to(message, "El RGB ya estaba apagado 🤷")
+	return
+
+########################################################## Handlers Tira de LEDs
+@bot.message_handler(commands=['encenderTiraLEDs'])
+def encenderTiraLEDs(message):
+	if not tiraLeds.get_estado(): # Si la tira no está encendida
+		# Activa la tira
+		tiraLeds.enciende_tira()
+		bot.reply_to(message, "Tira de LEDs activada 🚥")
+	else:
+		bot.reply_to(message, "La tira de LEDs ya estaba encendida 🤷")
+	return
+
+@bot.message_handler(commands=['apagarTiraLEDs'])
+def apagarTiraLEDs(message):
+	if tiraLeds.get_estado(): # Si la tira está encendida
+		# Apaga la tira
+		tiraLeds.apaga_rgb()
+		bot.reply_to(message, "Tira de LEDs apagada 🙈")
+	else:
+		bot.reply_to(message, "La tira de LEDs ya estaba apagada 🤷")
 	return
 
 #Maneja aquellos mensajes cuyo content_type sea 'text'
