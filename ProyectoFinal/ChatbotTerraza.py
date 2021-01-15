@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Fecha:            13/enero/2021
-# Descripción:      Programa principal de control de la terraza inteligente,
+# Descripcion:      Programa principal de control de la terraza inteligente,
 #										realiza el manejo de distintos comandos mediante un
 #										chatbot de Telegram
 
@@ -9,6 +9,7 @@ from gpiozero import LED, LEDBoard
 from bluedot import BlueDot, COLORS
 from random import choice
 from gpiozero import PWMLED
+from time import sleep
 
 from Atenuacion import *
 from Reflectores import LedRGB, TiraLeds
@@ -19,9 +20,10 @@ ledB = LEDBoard(26, 19, 13, 6, pwm=True)
 lamparas = Atenuacion(ledB)
 
 # Inializacion de objetos
-ledSL = LED(12)
-sensorLuz = SensorLuz(ledSL)
-led = LED (19)
+#ledSL = LED(18)
+sensorLuz = SensorLuz()
+led = LED (17)
+sensorUltra = SensorMov()
 
 
 
@@ -33,13 +35,13 @@ bd = BlueDot(cols=2, rows=2)
 for button in bd.buttons:
 	button.color = choice(list(COLORS.values()))
 
-# Creación de objeto RGB
+# Creacion de objeto RGB
 rgbObject = LedRGB(bd[0,0])
 
-# Creación de una tira de leds
+# Creacion de una tira de leds
 tiraLeds = TiraLeds(bd[0,1])
 
-#Creación de un objeto motor
+#Creacion de un objeto motor
 motor = Motor_P(bd[1,1])
 
 
@@ -76,7 +78,8 @@ def info(message):
 		"2) /apagarTiraLEDs: Apaga la tira de LEDs\n"+
 		"Uso de sensores\n"+
 		"1) /luzAutoma: Enciede una lámpara de forma automática.\n"+
-		"\t El encendido se realiza si es de noche y se detecta una persona en la terraza"
+		"\t El encendido se realiza si es de noche y se detecta una persona en la terraza\n"+
+		"2) /toldoAuto: Permite cerrar el toldo de la terraza cuando se detecta la luz del sol, mientras que al caer la noche, se vuelve a abrir. Esto de forma automática"
 
 	)
 	return
@@ -222,6 +225,7 @@ def estadoLuces(message):
 @bot.message_handler(commands=['luzAutoma'])
 def luzExterior(message):
 	#Si no detecta luz
+	print(sensorLuz.getValor())
 	if (sensorLuz.getValor() == 0):
 		bot.reply_to(message, "Es de noche \U0001F31A\n")
 		#Y la persona se encuentra fuera del rango
@@ -231,6 +235,8 @@ def luzExterior(message):
 		elif (sensorUltra.getRange() == 1):
 			bot.reply_to(message, "Persona detectada \U00002640 \U00002642 \n")
 			led.on()
+		else:
+			bot.reply_to(message, "Error con el sensor. Dar mantenimiento"+" \U00002699\n")
 
 	#Si detecta luz
 	elif sensorLuz.getValor() == 1:
@@ -244,22 +250,22 @@ def toldoAuto(message):
 	if (sensorLuz.getValor() == 0):
 		#Abrir toldo
 		bot.reply_to(message, "Hay poca luz, dejemos entrar un poco \U0001F31A\n")
-		motor.backward()
+		motor.atras()
 		sleep(3)
-		motor.stop()
+		motor.alto()
 
 	#Si detecta luz 
 	elif sensorLuz.getValor() == 1:
 		#Cerrar Toldo
 		bot.reply_to(message, "Hay mucha luz, cerremos el toldo \U0001F31E\n")
-		motor.forward()
-	    sleep(3)
-	    motor.stop()
+		motor.adelante()
+		sleep(3)
+		motor.alto()
 
 @bot.message_handler(commands=['toldoMan'])
 def toldoMan(message):
-	bd[1,1].when_moved = motor.set_pos()
-	bd[1,1].when_released = motor.stop()	
+	bd[1,1].when_moved = motor.set_pos
+	bd[1,1].when_released = motor.alto	
 
 
 #Maneja aquellos mensajes cuyo content_type sea 'text'
