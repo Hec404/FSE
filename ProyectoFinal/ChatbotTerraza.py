@@ -12,30 +12,39 @@ from gpiozero import PWMLED
 
 from Atenuacion import *
 from Reflectores import LedRGB, TiraLeds
+from Sensores import SensorLuz,SensorMov,Motor_P
 
 # Inializacion de objetos
 ledB = LEDBoard(26, 19, 13, 6, pwm=True)
 lamparas = Atenuacion(ledB)
 
-# Creacion de objeto BlueDot con 3 botones
-bd = BlueDot(cols=2, rows=3)
+# Inializacion de objetos
+ledSL = LED(12)
+sensorLuz = SensorLuz(ledSL)
+led = LED (19)
 
-# Ocultar botones no usados
-bd[0,0].visible = False
-bd[0,2].visible = False
-bd[1,1].visible = False
+
+
+# Creacion de objeto BlueDot con 3 botones
+bd = BlueDot(cols=2, rows=2)
+
+
 # Cambio de colores de los botones
 for button in bd.buttons:
 	button.color = choice(list(COLORS.values()))
 
 # Creación de objeto RGB
-rgbObject = LedRGB(bd[1,0])
+rgbObject = LedRGB(bd[0,0])
 
 # Creación de una tira de leds
-tiraLeds = TiraLeds(bd[1,2])
+tiraLeds = TiraLeds(bd[0,1])
+
+#Creación de un objeto motor
+motor = Motor_P(bd[1,1])
+
 
 ###Token del bot usado
-API_TOKEN = '1258492295:AAH7DDW2U-FyzQmEqKN30METEspTYSjwaSQ'
+API_TOKEN = '1364090815:AAHENBX3_jYXxLp6Fmlb5hmBDrzQU92cxug'
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -64,7 +73,11 @@ def info(message):
 		"Uso de la tira de LEDs:\n"+
 		"1) /encenderTiraLEDs: Enciende la tira de LEDs y permite manipularla "+
 		"mediante el bluedot\n"+
-		"2) /apagarTiraLEDs: Apaga la tira de LEDs"
+		"2) /apagarTiraLEDs: Apaga la tira de LEDs\n"+
+		"Uso de sensores\n"+
+		"1) /luzAutoma: Enciede una lámpara de forma automática.\n"+
+		"\t El encendido se realiza si es de noche y se detecta una persona en la terraza"
+
 	)
 	return
 
@@ -135,7 +148,7 @@ def botAtenuarLuz(message):
 	#Llama al metodo para atenuar una luz
 	if(lamparas.atenuarLuz(l)):
 		#Asocia funcion a BlueDot
-		bd[0,1].when_moved = lamparas.ajustarAtenuacion
+		bd[1,0].when_moved = lamparas.ajustarAtenuacion
 		bot.reply_to(message, """\
 			Atenuación \U0001F61C """)
 		return
@@ -199,6 +212,56 @@ def apagarTiraLEDs(message):
 		bot.reply_to(message, "La tira de LEDs ya estaba apagada 🤷")
 	return
 
+########################################################## Handlers Sensores
+#handle '/estado'
+@bot.message_handler(commands=['estado'])
+def estadoLuces(message):
+	global lamparas
+	
+	return
+@bot.message_handler(commands=['luzAutoma'])
+def luzExterior(message):
+	#Si no detecta luz
+	if (sensorLuz.getValor() == 0):
+		bot.reply_to(message, "Es de noche \U0001F31A\n")
+		#Y la persona se encuentra fuera del rango
+		if (sensorUltra.getRange() == 0):
+			led.off()
+		#Y la persona se encuentra dentro del rango
+		elif (sensorUltra.getRange() == 1):
+			bot.reply_to(message, "Persona detectada \U00002640 \U00002642 \n")
+			led.on()
+
+	#Si detecta luz
+	elif sensorLuz.getValor() == 1:
+		bot.reply_to(message, "Es de día \U0001F31E\n")
+		led.off()
+
+
+@bot.message_handler(commands=['toldoAuto'])
+def toldoAuto(message):
+	#Si no detecta luz
+	if (sensorLuz.getValor() == 0):
+		#Abrir toldo
+		bot.reply_to(message, "Hay poca luz, dejemos entrar un poco \U0001F31A\n")
+		motor.backward()
+		sleep(3)
+		motor.stop()
+
+	#Si detecta luz 
+	elif sensorLuz.getValor() == 1:
+		#Cerrar Toldo
+		bot.reply_to(message, "Hay mucha luz, cerremos el toldo \U0001F31E\n")
+		motor.forward()
+	    sleep(3)
+	    motor.stop()
+
+@bot.message_handler(commands=['toldoMan'])
+def toldoMan(message):
+	bd[1,1].when_moved = motor.set_pos()
+	bd[1,1].when_released = motor.stop()	
+
+
 #Maneja aquellos mensajes cuyo content_type sea 'text'
 @bot.message_handler(func=lambda message: True)
 def echo_message(message):
@@ -215,5 +278,7 @@ def obtenerNumero(expReg, mensaje):
 	m = reg.match(mensaje.text)
 	#Retorna el numero de la cadena recibida
 	return m.group(2)
+
+
 
 bot.polling()
