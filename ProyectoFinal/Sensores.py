@@ -35,7 +35,6 @@ class SensorLuz:
     
     #Metodo para obtener el valor del sensor
     def getValor(self):
-        print("Aqui 2")
         self.__sensorLuz.when_dark = self.oscuro
         self.__sensorLuz.when_light = self.luz
 
@@ -100,6 +99,7 @@ class Motor_P:
 
     def set_pos(self,pos):
         pos_act = pos.x
+        est = ""
          #Si la posición actual es mayor a la anterior el abrimos
         if (pos_act > self.pos_ant):
             #Si avanza más de lo debido

@@ -79,7 +79,8 @@ def info(message):
 		"Uso de sensores\n"+
 		"1) /luzAutoma: Enciede una lámpara de forma automática.\n"+
 		"\t El encendido se realiza si es de noche y se detecta una persona en la terraza\n"+
-		"2) /toldoAuto: Permite cerrar el toldo de la terraza cuando se detecta la luz del sol, mientras que al caer la noche, se vuelve a abrir. Esto de forma automática"
+		"2) /toldoAuto: Permite cerrar el toldo de la terraza cuando se detecta la luz del sol, mientras que al caer la noche, se vuelve a abrir. Esto de forma automática\n"+
+		"3) /toldoMan: Permite abrir y cerrar el toldo de forma manual usando un botón bluedot. Posee validación en caso de abir o cerrar el toldo en su extremo máximo."
 
 	)
 	return
@@ -225,7 +226,6 @@ def estadoLuces(message):
 @bot.message_handler(commands=['luzAutoma'])
 def luzExterior(message):
 	#Si no detecta luz
-	print(sensorLuz.getValor())
 	if (sensorLuz.getValor() == 0):
 		bot.reply_to(message, "Es de noche \U0001F31A\n")
 		#Y la persona se encuentra fuera del rango
