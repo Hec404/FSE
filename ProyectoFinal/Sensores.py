@@ -32,12 +32,10 @@ class SensorLuz:
         self.__sensorLuz = LightSensor(18)
         self.valor = 0
 
-    
     #Metodo para obtener el valor del sensor
     def getValor(self):
         self.__sensorLuz.when_dark = self.oscuro
         self.__sensorLuz.when_light = self.luz
-
         return self.valor
 
     def oscuro(self):
@@ -45,9 +43,6 @@ class SensorLuz:
          
     def luz(self):
         self.valor = 1
-
-    
-
 
     def getEstado(self):
         est = ""
@@ -60,11 +55,11 @@ class SensorLuz:
         else:
             est +=  "Error con el sensor. Dar mantenimiento"+" \U00002699\n"
 
-
+#Clase para el uso de Sensores de movimiento
 class SensorMov:
      #Consrtuctor de la clase
-    def __init__(self):
-        self.sensorUltra = DistanceSensor(14, 15, max_distance=1,threshold_distance=0.2)
+    def __init__(self, echo, trigger):
+        self.sensorUltra = DistanceSensor(echo, trigger, max_distance=1,threshold_distance=0.2)
         self.valor = 0
 
     def getRange(self):
@@ -78,6 +73,11 @@ class SensorMov:
     def out_range(self):
         self.valor = 0
 
+    def wait(self):
+        self.sensorUltra.wait_for_in_range()
+        return
+
+#Clase para el uso de un Motor DC
 class Motor_P:
     #Constructor de la clase:
     def __init__(self, bluedot):
