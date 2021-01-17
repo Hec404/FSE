@@ -15,6 +15,7 @@ from Atenuacion import *
 from Reflectores import LedRGB, TiraLeds
 from Sensores import SensorLuz,SensorMov,Motor_P
 from SistemaAlarma import *
+from ShowLuces import *
 
 # Inializacion de objetos
 ledB = LEDBoard(26, 19, 13, 6, pwm=True)
@@ -43,6 +44,9 @@ motor = Motor_P(bd[1,1])
 
 #Creacion de instancia del Sistema de Alarma
 alarma = SistemaAlarma(27, 22)
+
+#Inicialización de objetos
+lsp = ShowLuces(tiraLeds, ledB)
 
 ###Token del bot usado
 API_TOKEN = '1364090815:AAHENBX3_jYXxLp6Fmlb5hmBDrzQU92cxug'
@@ -83,7 +87,10 @@ def info(message):
 		"Control del Sistema de Alarma\n" +
 		"1) /onAlarma: Activa el sistema de alarma\n" +
 		"2) /offAlarma: Desactiva el sistema de alarma\n" +
-		"3) /shutdownAlarma: Apaga la alarma, sin desavtivar el sistema"
+		"3) /shutdownAlarma: Apaga la alarma, sin desavtivar el sistema\n\n" +
+		"Show de Luces\n" +
+		"1) /encenderSL: Activa el Show de Luces\n" +
+		"2) /apagarSL: Desactiva el Show de Luces"
 	)
 	return
 
@@ -303,6 +310,40 @@ def setAlarma(message):
 	if(alarma.getEstadoSensor()):
 		alarma.reproducirSonido()
 		bot.send_message(message.chat.id, "Advertencia: Alguien abrió la puerta")
+
+########################################################## Handlers Show de luces
+# Handle '/encenderSL'
+@bot.message_handler(commands=['encenderSL'])
+def encender(message):
+  #Apaga todos los leds que se ocupan para el show de luces
+  #lsp.apagaTira()
+  #lsp.apagaLeds()
+  #Si el show de luces ya estaba encendido
+  if lsp.getEstado():
+  	bot.reply_to(message, """\
+  		El show de luces ya está funcionando\
+      """)
+  #Si el show de luces estaba apagado
+  else:
+  	bot.reply_to(message, """\
+  		Se ha activado el show de luces\
+      """)
+  	lsp.showON()
+
+# Handle '/apagarSL'
+@bot.message_handler(commands=['apagarSL'])
+def apagar(message):
+  #Si el show de luces ya estaba apagado
+  if not lsp.getEstado():
+  	bot.reply_to(message, """\
+  		El show de luces ya está apagado\
+      """)
+  #Si el show de luces estaba encendido
+  else:
+  	bot.reply_to(message, """\
+  		Se ha desactivado el show de luces\
+      """)
+  	lsp.showOFF()
 
 #Maneja aquellos mensajes cuyo content_type sea 'text'
 @bot.message_handler(func=lambda message: True)
