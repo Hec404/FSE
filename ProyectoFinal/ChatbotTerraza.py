@@ -1,50 +1,76 @@
 #!/usr/bin/python
 # Fecha:            13/enero/2021
-# Descripción:      Programa principal de control de la terraza inteligente,
-#										realiza el manejo de distintos comandos mediante un
-#										chatbot de Telegram
+# Descripcion:      Programa principal de control de la terraza inteligente,
+#					realiza el manejo de distintos comandos mediante un
+#					chatbot de Telegram
+
+# Uso de pines GPIO (todos con estándar BCM <comando pinout>)
+# Atenuación de lamaparas: 26, 19, 13, 6
+# Sensor de luz: 18
+# Lampara de encendido automático: 17
+# Sensor de distancia para encendido automático: echo=14 trigger=15
+# Motor: forward=0,backward=5
+# LED RGB: R=21, G=20, B=16
+# Tira de leds: 1, 7, 8, 25
+# Sensor de distancia para sistema de alarma: echo=14 trigger=15
+# Show de luces: 27,22,23,24,10, 9,11,4
+
+# Distribución de botones Bluedot
+#        RGB               Atenuación de Luces
+#    Tira de LEDS                Bluedot
 
 import telebot, re
-from gpiozero import LED, LEDBoard
+from gpiozero import LED, LEDBoard, DistanceSensor
 from bluedot import BlueDot, COLORS
 from random import choice
 from gpiozero import PWMLED
+from time import sleep
 
 from Atenuacion import *
 from Reflectores import LedRGB, TiraLeds
 from Sensores import SensorLuz,SensorMov,Motor_P
+from SistemaAlarma import *
+from ShowLuces import *
 
 # Inializacion de objetos
 ledB = LEDBoard(26, 19, 13, 6, pwm=True)
 lamparas = Atenuacion(ledB)
 
 # Inializacion de objetos
-ledSL = LED(12)
-sensorLuz = SensorLuz(ledSL)
-led = LED (19)
-
-
+sensorLuz = SensorLuz()
+led = LED (17)
 
 # Creacion de objeto BlueDot con 3 botones
 bd = BlueDot(cols=2, rows=2)
-
 
 # Cambio de colores de los botones
 for button in bd.buttons:
 	button.color = choice(list(COLORS.values()))
 
-# Creación de objeto RGB
+# Creacion de objeto RGB
 rgbObject = LedRGB(bd[0,0])
 
-# Creación de una tira de leds
+# Creacion de una tira de leds
 tiraLeds = TiraLeds(bd[0,1])
 
-#Creación de un objeto motor
+#Creacion de un objeto motor
 motor = Motor_P(bd[1,1])
 
+#Creación de un sensor de distancia
+sensorDistancia = DistanceSensor(echo=14, trigger=15,
+	max_distance=1, threshold_distance=0.2)
+
+#Creación de un objeto SensorMov
+sensorUltra = SensorMov(sensorDistancia)
+
+#Creacion de instancia del Sistema de Alarma
+alarma = SistemaAlarma(sensorUltra)
+
+#Inicialización de objetos
+lsp = ShowLuces(tiraLeds, ledB)
 
 ###Token del bot usado
-API_TOKEN = '1364090815:AAHENBX3_jYXxLp6Fmlb5hmBDrzQU92cxug'
+API_TOKEN = '1258492295:AAH7DDW2U-FyzQmEqKN30METEspTYSjwaSQ'
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -73,11 +99,19 @@ def info(message):
 		"Uso de la tira de LEDs:\n"+
 		"1) /encenderTiraLEDs: Enciende la tira de LEDs y permite manipularla "+
 		"mediante el bluedot\n"+
-		"2) /apagarTiraLEDs: Apaga la tira de LEDs\n"+
+		"2) /apagarTiraLEDs: Apaga la tira de LEDs\n\n"+
 		"Uso de sensores\n"+
 		"1) /luzAutoma: Enciede una lámpara de forma automática.\n"+
-		"\t El encendido se realiza si es de noche y se detecta una persona en la terraza"
-
+		"El encendido se realiza si es de noche y se detecta una persona en la terraza\n"+
+		"2) /toldoAuto: Permite cerrar el toldo de la terraza cuando se detecta la luz del sol, mientras que al caer la noche, se vuelve a abrir. Esto de forma automática\n"+
+		"3) /toldoMan: Permite abrir y cerrar el toldo de forma manual usando un botón bluedot. Posee validación en caso de abir o cerrar el toldo en su extremo máximo.\n\n" +
+		"Control del Sistema de Alarma\n" +
+		"1) /onAlarma: Activa el sistema de alarma\n" +
+		"2) /offAlarma: Desactiva el sistema de alarma\n" +
+		"3) /shutdownAlarma: Apaga la alarma, sin desavtivar el sistema\n\n" +
+		"Show de Luces\n" +
+		"1) /encenderSL: Activa el Show de Luces\n" +
+		"2) /apagarSL: Desactiva el Show de Luces"
 	)
 	return
 
@@ -213,25 +247,21 @@ def apagarTiraLEDs(message):
 	return
 
 ########################################################## Handlers Sensores
-#handle '/estado'
-@bot.message_handler(commands=['estado'])
-def estadoLuces(message):
-	global lamparas
-	
-	return
 @bot.message_handler(commands=['luzAutoma'])
 def luzExterior(message):
 	#Si no detecta luz
 	if (sensorLuz.getValor() == 0):
-		bot.reply_to(message, "Es de noche \U0001F31A\n")
+		#bot.reply_to(message, "Es de noche \U0001F31A\n")
 		#Y la persona se encuentra fuera del rango
 		if (sensorUltra.getRange() == 0):
+			bot.reply_to(message, "No hay nadie, apagaré tu luz 🤷 \n")
 			led.off()
 		#Y la persona se encuentra dentro del rango
 		elif (sensorUltra.getRange() == 1):
-			bot.reply_to(message, "Persona detectada \U00002640 \U00002642 \n")
+			bot.reply_to(message, "Es de noche y una persona fue detectada \U00002640 \U00002642 \n")
 			led.on()
-
+		else:
+			bot.reply_to(message, "Error con el sensor. Dar mantenimiento"+" \U00002699\n")
 	#Si detecta luz
 	elif sensorLuz.getValor() == 1:
 		bot.reply_to(message, "Es de día \U0001F31E\n")
@@ -244,23 +274,97 @@ def toldoAuto(message):
 	if (sensorLuz.getValor() == 0):
 		#Abrir toldo
 		bot.reply_to(message, "Hay poca luz, dejemos entrar un poco \U0001F31A\n")
-		motor.backward()
+		motor.atras()
 		sleep(3)
-		motor.stop()
-
+		motor.alto()
 	#Si detecta luz 
 	elif sensorLuz.getValor() == 1:
 		#Cerrar Toldo
 		bot.reply_to(message, "Hay mucha luz, cerremos el toldo \U0001F31E\n")
-		motor.forward()
-	    sleep(3)
-	    motor.stop()
+		motor.adelante()
+		sleep(3)
+		motor.alto()
 
 @bot.message_handler(commands=['toldoMan'])
 def toldoMan(message):
-	bd[1,1].when_moved = motor.set_pos()
-	bd[1,1].when_released = motor.stop()	
+	bd[1,1].when_moved = motor.set_pos
+	bd[1,1].when_released = motor.alto	
 
+########################################################## Handlers Sistema de Alarma
+#Handle '/onAlarma'
+@bot.message_handler(commands=['onAlarma'])
+def encenderAlarmaBot(message):
+	if(alarma.encenderAlarma()):
+		#Se ha encendido la alarma
+		bot.reply_to(message, "Se ha activado el sistema de alarma")
+		#Espera a que se active la alarma
+		setAlarma(message)
+	else:
+		bot.reply_to(message, "El sistema de alarma ya está encendido")
+
+#Handle '/offAlarma'
+@bot.message_handler(commands=['offAlarma'])
+def desactivarAlarmaBot(message):
+	if(alarma.desactivarAlarma()):
+		bot.reply_to(message, "PRECAUCIÓN: Se ha desactivado el sistema de alarma")
+	else:
+		bot.reply_to(message, "El sistema de alarma ya está apagado")
+
+#Handle '/shutdownAlarma'
+@bot.message_handler(commands=['shutdownAlarma'])
+def apagarAlarmaBot(message):
+	repuesta = alarma.apagarAlarma()
+	if(repuesta == 1):
+		bot.reply_to(message, "El sistema de alarma no está encendido")
+	elif(repuesta == 2):
+		bot.reply_to(message, "Alarma apagada\n" +
+			"Verifique quién ha utilizado la puerta\n")
+		#Espera a que se active la alarma
+		setAlarma(message)
+	else:
+		bot.reply_to(message, "Aún no se ha detectado el uso de la puerta")
+
+def setAlarma(message):
+	#Espera que se active el sensor
+	alarma.sensor.wait()
+	#Verifica el estado del sistema, determina si debe ignorar el sensor
+	if(alarma.getEstadoSensor()):
+		alarma.reproducirSonido()
+		bot.send_message(message.chat.id, "Advertencia: Alguien abrió la puerta")
+
+########################################################## Handlers Show de luces
+# Handle '/encenderSL'
+@bot.message_handler(commands=['encenderSL'])
+def encender(message):
+  #Apaga todos los leds que se ocupan para el show de luces
+  #lsp.apagaTira()
+  #lsp.apagaLeds()
+  #Si el show de luces ya estaba encendido
+  if lsp.getEstado():
+  	bot.reply_to(message, """\
+  		El show de luces ya está funcionando\
+      """)
+  #Si el show de luces estaba apagado
+  else:
+  	bot.reply_to(message, """\
+  		Se ha activado el show de luces\
+      """)
+  	lsp.showON()
+
+# Handle '/apagarSL'
+@bot.message_handler(commands=['apagarSL'])
+def apagar(message):
+  #Si el show de luces ya estaba apagado
+  if not lsp.getEstado():
+  	bot.reply_to(message, """\
+  		El show de luces ya está apagado\
+      """)
+  #Si el show de luces estaba encendido
+  else:
+  	bot.reply_to(message, """\
+  		Se ha desactivado el show de luces\
+      """)
+  	lsp.showOFF()
 
 #Maneja aquellos mensajes cuyo content_type sea 'text'
 @bot.message_handler(func=lambda message: True)

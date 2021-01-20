@@ -20,7 +20,7 @@
 #                       persona en la terraza.
 
 import telebot, re
-from gpiozero import DistanceSensor, Motor, LightSensor, LED, DistanceSensor
+from gpiozero import DistanceSensor, Motor, LightSensor, LED
 from time import sleep
 from signal import pause
 from bluedot import BlueDot
@@ -28,18 +28,21 @@ from bluedot import BlueDot
  
 class SensorLuz:
     #Consrtuctor de la clase
-    def __init__(self,ledSL):
-        self.sensorLuz = ledSL
+    def __init__(self):
+        self.__sensorLuz = LightSensor(18)
         self.valor = 0
 
     #Metodo para obtener el valor del sensor
     def getValor(self):
-        if (self.sensorLuz.when_dark):
-            return 0
-        elif (self.sensorLuz.when_light):
-            return 1
-        else:
-            return -1
+        self.__sensorLuz.when_dark = self.oscuro
+        self.__sensorLuz.when_light = self.luz
+        return self.valor
+
+    def oscuro(self):
+        self.valor = 0 
+         
+    def luz(self):
+        self.valor = 1
 
     def getEstado(self):
         est = ""
@@ -52,55 +55,73 @@ class SensorLuz:
         else:
             est +=  "Error con el sensor. Dar mantenimiento"+" \U00002699\n"
 
-
+#Clase para el uso de Sensores de movimiento
 class SensorMov:
      #Consrtuctor de la clase
-    def __init__(self):
-        self.sensorUltra = DistanceSensor(14, 15, max_distance=1,threshold_distance=0.2)
+    def __init__(self, sensor):
+        self.sensorUltra = sensor
         self.valor = 0
 
     def getRange(self):
-        if (self.sensorUltra.when_in_range):
-            return 1
-        elif (self.sensorUltra.when_out_of_range):
-            return 0
-        else:
-            return -1
+        self.sensorUltra.when_in_range = self.in_range
+        self.sensorUltra.when_out_of_range = self.out_range
+        return self.valor
+        
+    def in_range(self):
+        self.valor = 1
 
+    def out_range(self):
+        self.valor = 0
+
+    def wait(self):
+        self.sensorUltra.wait_for_in_range()
+        return
+
+#Clase para el uso de un Motor DC
 class Motor_P:
     #Constructor de la clase:
     def __init__(self, bluedot):
-        self.motor = Motor(forward=21,backward=20)
+        self.motor = Motor(forward=0, backward=5)
         # bluedot es una instancia de bluedot.BlueDot
         self.__bluedot = bluedot
         self.cont_back = 0
         self.cont_for = 0
         self.pos_ant=0
 
+    def atras(self):
+        self.motor.backward()
 
-    def __set_pos(self,pos):
+    def adelante(self):
+        self.motor.forward()
+
+    def alto(self):
+        self.motor.stop()
+
+    def set_pos(self,pos):
         pos_act = pos.x
+        est = ""
          #Si la posición actual es mayor a la anterior el abrimos
         if (pos_act > self.pos_ant):
             #Si avanza más de lo debido
             if(self.cont_back>100):
-                print("Alto! Lo vas a romper")
-                motor.stop()
+                self.motor.stop()
+                est = "Alto! Lo vas a romper \U0001F6D1"
             else:
-                motor.backward()
+                self.motor.backward()
                 self.cont_for-=1
                 self.cont_back+=1
          #Si la posición actual es menor a la anterior el cerramos
         elif(pos_act<self.pos_ant):
             #Si avanza más de lo debido
             if(self.cont_for>100):
-                print("Alto! Lo vas a romper")
-                motor.stop()
+                self.motor.stop()
+                est = "Alto! Lo vas a romper \U0001F6D1"
             else:
-                motor.forward()
+                self.motor.forward()
                 self.cont_for+=1
                 self.cont_back-=1
         #Guardamos posición anterior
         self.pos_ant=pos_act
+        return est
         
 
