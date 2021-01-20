@@ -6,8 +6,8 @@ class SistemaAlarma:
 	pygame.mixer.init()
 	pygame.mixer.music.load("bedobedo.mp3")
 
-	def __init__(self, echo, trigger):
-		self.sensor = SensorMov(echo, trigger)
+	def __init__(self, sensor):
+		self.sensor = sensor
 		self.__alarmFlag = False
 		self.__sensorFlag = True
 

@@ -1,6 +1,9 @@
 import subprocess, os
 
-#Pines ocupados 2,3,4,5,9,10,11,12
+#Pines ocupados
+#Configrurar overrides.cfg con:
+# gpio_pins =  2, 3, 4, 5,12,13,14,7           Estándar wPi
+#             27,22,23,24,10, 9,11,4           Estándar BCM (comando pinout)
 
 class ShowLuces:
   #Constructor de la clase

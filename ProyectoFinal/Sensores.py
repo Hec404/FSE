@@ -20,7 +20,7 @@
 #                       persona en la terraza.
 
 import telebot, re
-from gpiozero import DistanceSensor, Motor, LightSensor, LED, DistanceSensor
+from gpiozero import DistanceSensor, Motor, LightSensor, LED
 from time import sleep
 from signal import pause
 from bluedot import BlueDot
@@ -58,8 +58,8 @@ class SensorLuz:
 #Clase para el uso de Sensores de movimiento
 class SensorMov:
      #Consrtuctor de la clase
-    def __init__(self, echo, trigger):
-        self.sensorUltra = DistanceSensor(echo, trigger, max_distance=1,threshold_distance=0.2)
+    def __init__(self, sensor):
+        self.sensorUltra = sensor
         self.valor = 0
 
     def getRange(self):
@@ -81,7 +81,7 @@ class SensorMov:
 class Motor_P:
     #Constructor de la clase:
     def __init__(self, bluedot):
-        self.motor = Motor(forward=23,backward=24)
+        self.motor = Motor(forward=0, backward=5)
         # bluedot es una instancia de bluedot.BlueDot
         self.__bluedot = bluedot
         self.cont_back = 0

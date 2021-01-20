@@ -4,8 +4,23 @@
 #					realiza el manejo de distintos comandos mediante un
 #					chatbot de Telegram
 
+# Uso de pines GPIO (todos con estándar BCM <comando pinout>)
+# Atenuación de lamaparas: 26, 19, 13, 6
+# Sensor de luz: 18
+# Lampara de encendido automático: 17
+# Sensor de distancia para encendido automático: echo=14 trigger=15
+# Motor: forward=0,backward=5
+# LED RGB: R=21, G=20, B=16
+# Tira de leds: 1, 7, 8, 25
+# Sensor de distancia para sistema de alarma: echo=14 trigger=15
+# Show de luces: 27,22,23,24,10, 9,11,4
+
+# Distribución de botones Bluedot
+#        RGB               Atenuación de Luces
+#    Tira de LEDS                Bluedot
+
 import telebot, re
-from gpiozero import LED, LEDBoard
+from gpiozero import LED, LEDBoard, DistanceSensor
 from bluedot import BlueDot, COLORS
 from random import choice
 from gpiozero import PWMLED
@@ -24,7 +39,6 @@ lamparas = Atenuacion(ledB)
 # Inializacion de objetos
 sensorLuz = SensorLuz()
 led = LED (17)
-sensorUltra = SensorMov(14, 15)
 
 # Creacion de objeto BlueDot con 3 botones
 bd = BlueDot(cols=2, rows=2)
@@ -42,14 +56,21 @@ tiraLeds = TiraLeds(bd[0,1])
 #Creacion de un objeto motor
 motor = Motor_P(bd[1,1])
 
+#Creación de un sensor de distancia
+sensorDistancia = DistanceSensor(echo=14, trigger=15,
+	max_distance=1, threshold_distance=0.2)
+
+#Creación de un objeto SensorMov
+sensorUltra = SensorMov(sensorDistancia)
+
 #Creacion de instancia del Sistema de Alarma
-alarma = SistemaAlarma(27, 22)
+alarma = SistemaAlarma(sensorUltra)
 
 #Inicialización de objetos
 lsp = ShowLuces(tiraLeds, ledB)
 
 ###Token del bot usado
-API_TOKEN = '1364090815:AAHENBX3_jYXxLp6Fmlb5hmBDrzQU92cxug'
+API_TOKEN = '1258492295:AAH7DDW2U-FyzQmEqKN30METEspTYSjwaSQ'
 
 bot = telebot.TeleBot(API_TOKEN)
 
