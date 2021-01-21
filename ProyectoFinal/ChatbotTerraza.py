@@ -14,6 +14,7 @@
 # Tira de leds: 1, 7, 8, 25
 # Sensor de distancia para sistema de alarma: echo=14 trigger=15
 # Show de luces: 27,22,23,24,10, 9,11,4
+# LED por comandos de voz: 12
 
 # Distribución de botones Bluedot
 #        RGB               Atenuación de Luces

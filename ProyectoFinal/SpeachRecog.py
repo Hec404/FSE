@@ -7,7 +7,7 @@ from time import sleep
 
 from gpiozero import LED
 
-led = LED(17)
+led = LED(12)
 
 #Crear objeto de clase Recognizer 
 recognizer = sr.Recognizer()
@@ -19,7 +19,8 @@ recognizer.energy_threshold = 300
 def Fin_Program():
 	#Reproducción archivo de audio
 	#########FALTA GRABAR ESTE AUIDO###########
-	os.system('aplay --format=S16_LE --rate=16000 fin.wav')	
+	os.system('aplay --format=S16_LE --rate=16000 fin_B.wav')
+	exit()
 
 def Reco_Voz():
 	print("Tus deseos son ordenes")
@@ -28,7 +29,7 @@ def Reco_Voz():
 	os.system('arecord --format=S16_LE --duration=3 --rate=16000 --file-type=wav orden.wav')
 	#Detenemos el programa para permitir que termine de grabar el archivo
 	#	de audio y seguir con el flujo del programa
-	sleep(4)
+	sleep(3.5)
 	##Procesamiento de audio
 	print("Procesando tu orden")
 	audio_file_ = sr.AudioFile("orden.wav")
@@ -47,33 +48,27 @@ def Reco_Voz():
 			print(result)
 
 			#Si reconoce el comando para apagar la luz
-			if (result=='turn off lights'):
+			if(result == 'turn off lights' or result == 'turn off light' or result == 'turn off'):
 				print("apagando luz")
+				os.system('aplay --format=S16_LE --rate=16000 turn_off.wav')
 				led.off()
 				sleep(1)
 			#Si reconoce el comando para prender la luz
-			elif(result=='turn on lights'):
+			elif(result == 'turn on lights' or result == 'turn on light' or result == 'turn on'):
 				print("prendiendo luz")
+				os.system('aplay --format=S16_LE --rate=16000 turn_on.wav')
 				led.on()
 				sleep(3)
 			#Si reconoce comando para ejecutar programa principal
 			elif(result=='execute main program'):
 				os.system('python3 ChatbotTerraza.py')
 			#Agregar más comandos por voz para realizar diferentes acciones
-			#Para volver a dar otra instrucción por voz
-			elif(result=='do it again'):
-				Reco_Voz()
 			#Terminar el programa
-			elif(result=='end program'):
+			elif(result=='finish'):
 				Fin_Program()
 			#Presentar a miembros equipo
-			elif(result=='present team'):
-			##### FALTA GRABAR ESTE AUDIO#######
+			elif(result=='present us'):
 				os.system('aplay --format=S16_LE --rate=16000 equipo.wav')
-			elif(result=='turn on electrodomestic'):
-				### Ejecutar programa para prender elecrodoméstico
-				#os.system('python3 ChatbotTerraza.py')
-				#### o colocar aquí el código correspondiente
 			#En caso de no reconocer ninguna instrucción
 			else:
 				print("Lo siento, no te entendí")
@@ -89,3 +84,15 @@ def Reco_Voz():
 		pass
 	finally:
 		pass
+
+# Función principal
+# Se mantiene en un ciclo solicitando comandos hasta que el usuario termina
+# el programa
+while True:
+	try:
+		print('Usa Control-C para salir o envia el comando "finish"')
+		input("Presiona enter para ingresar un comando de voz")
+		Reco_Voz()
+	except KeyboardInterrupt:
+		print('Saliendo')
+		exit()
